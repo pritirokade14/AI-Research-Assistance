@@ -1,0 +1,1347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Research Assistant</title>
+  <meta name="description" content="Multi-Agent AI Research Assistant">
+  <style>
+:root {
+  --bg: #0b0d10;
+  --sidebar: #0f1115;
+  --panel: #14171c;
+  --panel-2: #181c22;
+  --border: #272c34;
+  --text: #f3f4f6;
+  --muted: #9299a5;
+  --muted-2: #6f7783;
+  --accent: #e8eaed;
+  --accent-dark: #0b0d10;
+  --success: #79d39b;
+  --warning: #e6bd6b;
+  --danger: #ef7777;
+  --radius: 16px;
+  --shadow: 0 18px 50px rgba(0,0,0,.28);
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  min-height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+button, textarea { font: inherit; }
+
+button { cursor: pointer; }
+
+.app-shell {
+  min-height: 100vh;
+  display: flex;
+}
+
+.sidebar {
+  width: 260px;
+  min-height: 100vh;
+  position: fixed;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  padding: 22px 16px;
+  background: var(--sidebar);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  z-index: 20;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 3px 8px 22px;
+}
+
+.brand-mark {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: var(--accent);
+  color: var(--accent-dark);
+  font-weight: 800;
+}
+
+.brand-title { font-size: 14px; font-weight: 700; }
+.brand-subtitle { color: var(--muted); font-size: 11px; margin-top: 2px; }
+
+.new-research-btn {
+  width: 100%;
+  height: 42px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  background: #171a20;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 13px;
+  transition: .2s;
+}
+
+.new-research-btn:hover { background: #20242b; border-color: #3a414c; }
+.plus { font-size: 20px; line-height: 1; color: #d9dde3; }
+
+.nav, .pipeline-nav { margin-top: 28px; }
+.nav-label {
+  color: var(--muted-2);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  padding: 0 10px 8px;
+  font-weight: 700;
+}
+
+.nav-item {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  text-align: left;
+  padding: 10px;
+  border-radius: 9px;
+  margin-bottom: 3px;
+}
+
+.nav-item span { display: inline-block; width: 25px; color: var(--muted-2); }
+.nav-item:hover, .nav-item.active { background: #191c22; color: var(--text); }
+.nav-item.active span { color: var(--text); }
+
+.mini-agent {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #4a515d;
+}
+
+.mini-agent.running .dot { background: var(--warning); box-shadow: 0 0 0 4px rgba(230,189,107,.08); }
+.mini-agent.completed .dot { background: var(--success); }
+.mini-agent.failed .dot { background: var(--danger); }
+
+.sidebar-footer {
+  margin-top: auto;
+  border-top: 1px solid var(--border);
+  padding: 16px 8px 0;
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.online-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--success);
+}
+
+.sidebar-note { color: #59616d; font-size: 10px; margin-top: 7px; }
+
+.main {
+  margin-left: 260px;
+  width: calc(100% - 260px);
+  min-height: 100vh;
+}
+
+.topbar {
+  height: 64px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 34px;
+  background: rgba(11,13,16,.86);
+  backdrop-filter: blur(12px);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.breadcrumb { color: var(--muted); font-size: 13px; }
+.top-actions { display: flex; gap: 8px; }
+.icon-btn, .mobile-menu {
+  border: 1px solid var(--border);
+  background: #15181d;
+  color: var(--muted);
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+}
+.icon-btn { color: var(--success); font-size: 10px; }
+
+.mobile-menu { display: none; }
+
+.content {
+  width: min(1060px, calc(100% - 64px));
+  margin: 0 auto;
+  padding: 78px 0 90px;
+}
+
+.hero { max-width: 760px; margin: 0 auto 30px; text-align: center; }
+.hero.compact { text-align: left; margin-left: 0; }
+.eyebrow, .section-kicker {
+  color: var(--muted-2);
+  font-size: 10px;
+  letter-spacing: .16em;
+  font-weight: 800;
+}
+.hero h1 {
+  margin: 11px 0 12px;
+  font-size: clamp(32px, 5vw, 52px);
+  letter-spacing: -.045em;
+  line-height: 1.03;
+}
+.hero p {
+  margin: 0 auto;
+  max-width: 650px;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+.composer-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+  padding: 20px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.composer-label {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+textarea {
+  width: 100%;
+  resize: vertical;
+  min-height: 125px;
+  background: #0e1014;
+  border: 1px solid #2b3038;
+  border-radius: 12px;
+  color: var(--text);
+  outline: none;
+  padding: 16px;
+  line-height: 1.6;
+}
+
+textarea:focus { border-color: #555e6b; box-shadow: 0 0 0 3px rgba(255,255,255,.025); }
+textarea::placeholder { color: #555d68; }
+
+.composer-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  margin-top: 14px;
+}
+
+.hint { color: var(--muted-2); font-size: 12px; }
+.spark { color: #d7dbe0; margin-right: 5px; }
+
+.primary-btn, .secondary-btn {
+  border-radius: 10px;
+  padding: 10px 15px;
+  border: 1px solid var(--border);
+  transition: .2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  white-space: nowrap;
+}
+
+.primary-btn {
+  background: var(--accent);
+  color: #101216;
+  border-color: var(--accent);
+  font-weight: 700;
+}
+
+.primary-btn:hover { transform: translateY(-1px); background: #fff; }
+.primary-btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+.primary-btn.small { padding: 9px 13px; }
+
+.secondary-btn {
+  background: #171a20;
+  color: var(--text);
+}
+
+.secondary-btn:hover { background: #20242b; }
+
+.arrow { font-size: 17px; }
+
+.examples {
+  max-width: 900px;
+  margin: 14px auto 0;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px;
+  color: var(--muted-2);
+  font-size: 11px;
+}
+
+.example-chip {
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 11px;
+}
+
+.example-chip:hover { color: var(--text); background: #14171c; }
+
+.pipeline-section, .result-section {
+  max-width: 1000px;
+  margin: 60px auto 0;
+}
+
+.section-heading, .result-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  align-items: flex-end;
+  margin-bottom: 18px;
+}
+
+h2 { margin: 5px 0 0; font-size: 25px; letter-spacing: -.025em; }
+.progress-number { font-size: 20px; font-weight: 700; }
+
+.progress-track {
+  height: 7px;
+  background: #1a1e24;
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid #242932;
+}
+
+.progress-fill {
+  height: 100%;
+  width: 0%;
+  background: #e8eaed;
+  transition: width .5s ease;
+}
+
+.current-message { color: var(--muted); font-size: 12px; margin: 12px 0 20px; }
+
+.agent-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.agent-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  padding: 15px;
+  min-height: 125px;
+  position: relative;
+  transition: .25s;
+}
+
+.agent-card.running { border-color: #5a4e31; }
+.agent-card.completed { border-color: #2d4c39; }
+.agent-card.failed { border-color: #553337; }
+
+.agent-icon {
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  margin-bottom: 14px;
+}
+
+.agent-card.running .agent-icon { color: var(--warning); }
+.agent-card.completed .agent-icon { color: var(--success); }
+
+.agent-info h3 { margin: 0; font-size: 13px; }
+.agent-info p { color: var(--muted-2); font-size: 11px; line-height: 1.5; margin: 5px 0 0; }
+
+.agent-status {
+  position: absolute;
+  right: 12px;
+  top: 14px;
+  color: var(--muted-2);
+  font-size: 10px;
+}
+
+.agent-card.running .agent-status { color: var(--warning); }
+.agent-card.completed .agent-status { color: var(--success); }
+.agent-card.failed .agent-status { color: var(--danger); }
+
+.result-header { align-items: center; }
+.result-header p { color: var(--muted); margin: 7px 0 0; font-size: 13px; }
+.result-actions { display: flex; gap: 8px; }
+
+.result-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin: 22px 0;
+}
+
+.stat-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 15px;
+}
+.stat-card span { color: var(--muted-2); font-size: 10px; text-transform: uppercase; letter-spacing: .08em; }
+.stat-card strong { display: block; margin-top: 7px; font-size: 14px; }
+
+.tabs {
+  display: flex;
+  gap: 5px;
+  border-bottom: 1px solid var(--border);
+  margin-top: 15px;
+}
+
+.tab {
+  background: transparent;
+  color: var(--muted);
+  border: 0;
+  padding: 12px 14px;
+  font-size: 12px;
+  border-bottom: 2px solid transparent;
+}
+
+.tab.active { color: var(--text); border-bottom-color: var(--text); }
+
+.result-panel {
+  display: none;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-top: 0;
+  border-radius: 0 0 14px 14px;
+  padding: 24px;
+}
+
+.result-panel.active { display: block; }
+.panel-title { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .1em; margin-bottom: 18px; }
+
+.report-content {
+  white-space: pre-wrap;
+  color: #d8dbe0;
+  font-size: 14px;
+  line-height: 1.85;
+}
+
+.raw-content {
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: #b8bec8;
+  font: 12px/1.7 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  max-height: 650px;
+  overflow: auto;
+  margin: 0;
+}
+
+.history-list { display: grid; gap: 10px; }
+.history-item {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  padding: 17px;
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  align-items: center;
+}
+.history-topic { font-size: 14px; font-weight: 600; }
+.history-meta { color: var(--muted); font-size: 11px; margin-top: 6px; }
+.history-status { font-size: 11px; color: var(--success); }
+
+.empty-state {
+  color: var(--muted);
+  border: 1px dashed var(--border);
+  border-radius: 13px;
+  padding: 35px;
+  text-align: center;
+}
+
+.error-card {
+  max-width: 900px;
+  margin: 25px auto;
+  display: flex;
+  gap: 13px;
+  align-items: flex-start;
+  padding: 16px;
+  background: #1d1416;
+  border: 1px solid #4b292e;
+  border-radius: 12px;
+}
+.error-icon {
+  width: 27px;
+  height: 27px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: #3a1e23;
+  color: var(--danger);
+  font-weight: 800;
+}
+.error-card strong { font-size: 13px; }
+.error-card p { color: #b88c91; font-size: 12px; margin: 5px 0 0; }
+
+.toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: #f0f1f3;
+  color: #101216;
+  border-radius: 10px;
+  padding: 11px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  box-shadow: var(--shadow);
+  transform: translateY(20px);
+  opacity: 0;
+  pointer-events: none;
+  transition: .25s;
+  z-index: 100;
+}
+.toast.show { transform: translateY(0); opacity: 1; }
+
+.hidden { display: none !important; }
+
+@media (max-width: 900px) {
+  .agent-grid, .result-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 720px) {
+  .sidebar {
+    transform: translateX(-100%);
+    transition: transform .25s;
+    box-shadow: var(--shadow);
+  }
+  .sidebar.open { transform: translateX(0); }
+  .main { margin-left: 0; width: 100%; }
+  .mobile-menu { display: block; }
+  .topbar { padding: 0 18px; gap: 12px; justify-content: flex-start; }
+  .top-actions { margin-left: auto; }
+  .content { width: calc(100% - 30px); padding-top: 48px; }
+  .hero h1 { font-size: 36px; }
+  .composer-bottom, .result-header { align-items: stretch; flex-direction: column; }
+  .primary-btn { justify-content: center; }
+  .agent-grid, .result-grid { grid-template-columns: 1fr; }
+  .examples { flex-direction: column; align-items: flex-start; }
+  .result-actions { width: 100%; }
+  .result-actions button { flex: 1; justify-content: center; }
+}
+
+  
+.report-content h1,.report-content h2,.report-content h3,.report-content h4{color:var(--text);line-height:1.25;letter-spacing:-.025em;margin:28px 0 12px}
+.report-content h1{font-size:30px}.report-content h2{font-size:22px;padding-bottom:8px;border-bottom:1px solid var(--border)}.report-content h3{font-size:17px}.report-content h4{font-size:15px}
+.report-content p{margin:0 0 16px;color:#d8dbe0}.report-content ul,.report-content ol{margin:8px 0 18px 24px;padding:0}.report-content li{margin:7px 0;padding-left:4px}
+.report-content strong{color:#fff}.report-content em{color:#c6cbd3}.report-content a{color:#dfe3e8;text-decoration:underline}
+.report-content blockquote{margin:18px 0;padding:12px 16px;border-left:3px solid #666e7a;background:#101319;color:#bfc5ce;border-radius:0 8px 8px 0}
+.report-content code{background:#0d1014;border:1px solid #252a31;border-radius:5px;padding:2px 5px;font:12px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.report-content pre{overflow-x:auto;padding:15px;background:#0d1014;border:1px solid var(--border);border-radius:10px;margin:16px 0}.report-content pre code{border:0;padding:0;background:transparent}
+.report-content hr{border:0;border-top:1px solid var(--border);margin:24px 0}
+
+  
+.report-content {
+  max-width: 900px;
+  margin: 0 auto;
+  line-height: 1.8;
+}
+.report-content > h1:first-child {
+  font-size: 32px;
+  margin-top: 0;
+  margin-bottom: 28px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--border);
+}
+.report-content h2 {
+  margin-top: 36px;
+  padding: 0 0 10px;
+  border-bottom: 1px solid var(--border);
+}
+.report-content h3 {
+  margin-top: 24px;
+}
+.report-content p {
+  color: #d7dbe1;
+  margin: 0 0 16px;
+}
+.report-content ul, .report-content ol {
+  margin: 8px 0 20px 26px;
+}
+.report-content li {
+  margin: 8px 0;
+  padding-left: 4px;
+}
+.report-content .report-section {
+  margin-top: 8px;
+}
+
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <div class="brand-mark">R</div>
+        <div>
+          <div class="brand-title">AI Research</div>
+          <div class="brand-subtitle">Multi-Agent Assistant</div>
+        </div>
+      </div>
+
+      <button class="new-research-btn" id="newResearchBtn">
+        <span class="plus">+</span>
+        <span>New research</span>
+      </button>
+
+      <nav class="nav">
+        <div class="nav-label">Workspace</div>
+        <button class="nav-item active" data-view="research">
+          <span>⌕</span> Research
+        </button>
+        <button class="nav-item" data-view="history">
+          <span>◷</span> Recent research
+        </button>
+      </nav>
+
+      <div class="pipeline-nav">
+        <div class="nav-label">Pipeline</div>
+        <div class="mini-agent" data-agent="Search Agent"><span class="dot"></span> Search Agent</div>
+        <div class="mini-agent" data-agent="Reader Agent"><span class="dot"></span> Reader Agent</div>
+        <div class="mini-agent" data-agent="Writer"><span class="dot"></span> Writer</div>
+        <div class="mini-agent" data-agent="Critic"><span class="dot"></span> Critic</div>
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="status-pill"><span class="online-dot"></span> API connected</div>
+        <div class="sidebar-note">FastAPI + LangChain + Mistral</div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <button class="mobile-menu" id="mobileMenu" aria-label="Open menu">☰</button>
+        <div class="breadcrumb">Research workspace</div>
+        <div class="top-actions">
+          <button class="icon-btn" id="healthBtn" title="Check API">●</button>
+        </div>
+      </header>
+
+      <section class="content">
+
+        <div id="researchView">
+          <div class="hero">
+            <div class="eyebrow">MULTI-AGENT RESEARCH</div>
+            <h1>What would you like to research?</h1>
+            <p>Give your topic to the research team. Search, Reader, Writer and Critic agents will work through it in sequence.</p>
+          </div>
+
+          <section class="composer-card">
+            <div class="composer-label">Research topic</div>
+            <textarea id="topicInput" rows="4" maxlength="500"
+              placeholder="Example: The impact of generative AI on software engineering and developer productivity"></textarea>
+            <div class="composer-bottom">
+              <div class="hint"><span class="spark">✦</span> Try a focused academic topic for better results.</div>
+              <button class="primary-btn" id="startBtn">
+                <span>Start research</span>
+                <span class="arrow">→</span>
+              </button>
+            </div>
+          </section>
+
+          <div class="examples">
+            <span>Try:</span>
+            <button class="example-chip">Impact of Generative AI on Software Engineering</button>
+            <button class="example-chip">Applications of AI in Personalized Education</button>
+            <button class="example-chip">Retrieval-Augmented Generation for LLM Accuracy</button>
+          </div>
+
+          <section class="pipeline-section hidden" id="pipelineSection">
+            <div class="section-heading">
+              <div>
+                <div class="section-kicker">LIVE PIPELINE</div>
+                <h2>Research in progress</h2>
+              </div>
+              <div class="progress-number" id="progressNumber">0%</div>
+            </div>
+
+            <div class="progress-track">
+              <div class="progress-fill" id="progressFill"></div>
+            </div>
+
+            <div class="current-message" id="currentMessage">Preparing your research...</div>
+
+            <div class="agent-grid">
+              <article class="agent-card" data-agent-card="Search Agent">
+                <div class="agent-icon">⌕</div>
+                <div class="agent-info">
+                  <h3>Search Agent</h3>
+                  <p>Finds relevant research information.</p>
+                </div>
+                <span class="agent-status" data-status>Waiting</span>
+              </article>
+
+              <article class="agent-card" data-agent-card="Reader Agent">
+                <div class="agent-icon">◫</div>
+                <div class="agent-info">
+                  <h3>Reader Agent</h3>
+                  <p>Reads deeper source content.</p>
+                </div>
+                <span class="agent-status" data-status>Waiting</span>
+              </article>
+
+              <article class="agent-card" data-agent-card="Writer">
+                <div class="agent-icon">✎</div>
+                <div class="agent-info">
+                  <h3>Writer</h3>
+                  <p>Drafts the research report.</p>
+                </div>
+                <span class="agent-status" data-status>Waiting</span>
+              </article>
+
+              <article class="agent-card" data-agent-card="Critic">
+                <div class="agent-icon">✓</div>
+                <div class="agent-info">
+                  <h3>Critic</h3>
+                  <p>Reviews the generated report.</p>
+                </div>
+                <span class="agent-status" data-status>Waiting</span>
+              </article>
+            </div>
+          </section>
+
+          <section class="result-section hidden" id="resultSection">
+            <div class="result-header">
+              <div>
+                <div class="section-kicker">RESEARCH COMPLETE</div>
+                <h2 id="resultTitle">Research Report</h2>
+                <p id="resultTopic"></p>
+              </div>
+              <div class="result-actions">
+                <button class="secondary-btn" id="copyBtn">Copy report</button>
+                <button class="primary-btn small" id="newBtn">New research</button>
+              </div>
+            </div>
+
+            <div class="result-grid">
+              <div class="stat-card">
+                <span>Search data</span>
+                <strong id="searchStat">Available</strong>
+              </div>
+              <div class="stat-card">
+                <span>Source content</span>
+                <strong id="sourceStat">Available</strong>
+              </div>
+              <div class="stat-card">
+                <span>Report</span>
+                <strong>Generated</strong>
+              </div>
+              <div class="stat-card">
+                <span>Critic</span>
+                <strong>Reviewed</strong>
+              </div>
+            </div>
+
+            <div class="tabs">
+              <button class="tab active" data-tab="report">Research Report</button>
+              <button class="tab" data-tab="sources">Sources</button>
+              <button class="tab" data-tab="feedback">Critic Feedback</button>
+            </div>
+
+            <article class="result-panel active" id="tab-report">
+              <div class="panel-title">Generated report</div>
+              <div class="report-content" id="reportContent"></div>
+            </article>
+
+            <article class="result-panel" id="tab-sources">
+              <div class="panel-title">Search results & source content</div>
+              <pre class="raw-content" id="sourcesContent"></pre>
+            </article>
+
+            <article class="result-panel" id="tab-feedback">
+              <div class="panel-title">AI critic review</div>
+              <pre class="raw-content" id="feedbackContent"></pre>
+            </article>
+          </section>
+
+          <div class="error-card hidden" id="errorCard">
+            <div class="error-icon">!</div>
+            <div>
+              <strong>Research could not be completed</strong>
+              <p id="errorMessage"></p>
+            </div>
+          </div>
+        </div>
+
+        <div id="historyView" class="hidden">
+          <div class="hero compact">
+            <div class="eyebrow">HISTORY</div>
+            <h1>Recent research</h1>
+            <p>Your latest research jobs from this session.</p>
+          </div>
+          <section class="history-list" id="historyList">
+            <div class="empty-state">No research jobs yet.</div>
+          </section>
+        </div>
+
+      </section>
+    </main>
+  </div>
+
+  <div class="toast" id="toast"></div>
+  <script>
+const API_BASE_URL = "http://127.0.0.1:8000";
+const POLL_INTERVAL = 1500;
+
+const state = {
+  jobId: null,
+  pollTimer: null,
+  running: false,
+  lastResult: null
+};
+
+const $ = (id) => document.getElementById(id);
+
+const topicInput = $("topicInput");
+const startBtn = $("startBtn");
+const pipelineSection = $("pipelineSection");
+const resultSection = $("resultSection");
+const errorCard = $("errorCard");
+const progressFill = $("progressFill");
+const progressNumber = $("progressNumber");
+const currentMessage = $("currentMessage");
+const toast = $("toast");
+
+function showToast(message) {
+  toast.textContent = message;
+  toast.classList.add("show");
+  setTimeout(() => toast.classList.remove("show"), 2400);
+}
+
+function setAgentState(agent, status) {
+  const card = document.querySelector(`[data-agent-card="${agent}"]`);
+  const mini = document.querySelector(`[data-agent="${agent}"]`);
+
+  if (card) {
+    card.classList.remove("running", "completed", "failed");
+    card.classList.add(status.toLowerCase());
+    const statusEl = card.querySelector("[data-status]");
+    if (statusEl) {
+      statusEl.textContent =
+        status === "completed" ? "Completed" :
+        status === "running" ? "Running" :
+        status === "failed" ? "Failed" : "Waiting";
+    }
+  }
+
+  if (mini) {
+    mini.classList.remove("running", "completed", "failed");
+    mini.classList.add(status.toLowerCase());
+  }
+}
+
+function resetAgents() {
+  ["Search Agent", "Reader Agent", "Writer", "Critic"].forEach(agent => {
+    setAgentState(agent, "waiting");
+  });
+}
+
+function updateProgress(data) {
+  const progress = Number(data.progress || 0);
+  progressFill.style.width = `${Math.max(0, Math.min(100, progress))}%`;
+  progressNumber.textContent = `${progress}%`;
+  currentMessage.textContent = data.message || data.step || "Working...";
+
+  const step = data.step || "";
+
+  if (step.includes("Search")) {
+    setAgentState("Search Agent", data.status === "completed" && progress >= 25 ? "completed" : "running");
+  } else if (step.includes("Reader")) {
+    setAgentState("Search Agent", "completed");
+    setAgentState("Reader Agent", "running");
+  } else if (step.includes("Writer")) {
+    setAgentState("Search Agent", "completed");
+    setAgentState("Reader Agent", "completed");
+    setAgentState("Writer", "running");
+  } else if (step.includes("Critic")) {
+    setAgentState("Search Agent", "completed");
+    setAgentState("Reader Agent", "completed");
+    setAgentState("Writer", "completed");
+    setAgentState("Critic", "running");
+  } else if (step.includes("Completed")) {
+    ["Search Agent", "Reader Agent", "Writer", "Critic"].forEach(a => setAgentState(a, "completed"));
+  }
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;").replaceAll("'", "&#039;");
+}
+
+function inlineMarkdown(text) {
+  let s = escapeHtml(text);
+
+  // Links
+  s = s.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,
+    '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+
+  // Bold / italic / inline code
+  s = s.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+  s = s.replace(/__([^_]+)__/g, "<strong>$1</strong>");
+  s = s.replace(/\*([^*]+)\*/g, "<em>$1</em>");
+  s = s.replace(/_([^_]+)_/g, "<em>$1</em>");
+  s = s.replace(/`([^`]+)`/g, "<code>$1</code>");
+
+  // Safety net: never display Markdown heading markers.
+  s = s.replace(/^#{1,6}\s+/, "");
+
+  return s;
+}
+
+function renderMarkdown(markdown) {
+  if (!markdown) return "<p>No report was returned.</p>";
+
+  // Normalize AI output so Markdown symbols are never shown to the user.
+  const rawLines = String(markdown)
+    .replace(/\r\n/g, "\n")
+    .replace(/\r/g, "\n")
+    .split("\n");
+
+  const output = [];
+  let paragraph = [];
+  let listType = null;
+  let inCode = false;
+  let codeLines = [];
+  let firstHeadingUsed = false;
+
+  const flushParagraph = () => {
+    if (paragraph.length) {
+      output.push(`<p>${inlineMarkdown(paragraph.join(" "))}</p>`);
+      paragraph = [];
+    }
+  };
+
+  const closeList = () => {
+    if (listType) {
+      output.push(`</${listType}>`);
+      listType = null;
+    }
+  };
+
+  const flushCode = () => {
+    if (inCode) {
+      output.push(`<pre><code>${escapeHtml(codeLines.join("\n"))}</code></pre>`);
+      codeLines = [];
+      inCode = false;
+    }
+  };
+
+  for (let rawLine of rawLines) {
+    let line = rawLine.trim();
+
+    // Code blocks are preserved.
+    if (line.startsWith("```")) {
+      flushParagraph();
+      closeList();
+      if (inCode) flushCode();
+      else inCode = true;
+      continue;
+    }
+
+    if (inCode) {
+      codeLines.push(rawLine);
+      continue;
+    }
+
+    if (!line) {
+      flushParagraph();
+      closeList();
+      continue;
+    }
+
+    // Remove Markdown heading symbols before rendering.
+    const heading = line.match(/^#{1,6}\s+(.+?)\s*#*$/);
+
+    if (heading) {
+      flushParagraph();
+      closeList();
+
+      const title = heading[1]
+        .replace(/^#+\s*/, "")
+        .replace(/\s+#+$/, "")
+        .trim();
+
+      // First heading becomes the report title.
+      if (!firstHeadingUsed) {
+        output.push(`<h1>${inlineMarkdown(title)}</h1>`);
+        firstHeadingUsed = true;
+      } else {
+        // All later headings become clean section headings.
+        output.push(`<h2>${inlineMarkdown(title)}</h2>`);
+      }
+      continue;
+    }
+
+    // Remove Markdown horizontal rules.
+    if (/^([-*_])\1\1+$/.test(line)) {
+      flushParagraph();
+      closeList();
+      continue;
+    }
+
+    // Handle bullets, including "* **Text:** ..." correctly.
+    const unordered = line.match(/^[-*+]\s+(.+)$/);
+    const ordered = line.match(/^\d+[.)]\s+(.+)$/);
+
+    if (unordered || ordered) {
+      flushParagraph();
+
+      const type = unordered ? "ul" : "ol";
+
+      if (listType !== type) {
+        closeList();
+        output.push(`<${type}>`);
+        listType = type;
+      }
+
+      output.push(`<li>${inlineMarkdown((unordered || ordered)[1])}</li>`);
+      continue;
+    }
+
+    // Blockquotes.
+    const quote = line.match(/^>\s?(.*)$/);
+
+    if (quote) {
+      flushParagraph();
+      closeList();
+      output.push(`<blockquote>${inlineMarkdown(quote[1])}</blockquote>`);
+      continue;
+    }
+
+    paragraph.push(line);
+  }
+
+  flushCode();
+  flushParagraph();
+  closeList();
+
+  return output.join("\n");
+}
+
+function formatReport(text) {
+  if (!text) return "No report was returned.";
+  return String(text)
+    .replace(/\r\n/g, "\n")
+    .trim();
+}
+
+async function startResearch() {
+  const topic = topicInput.value.trim();
+
+  if (topic.length < 3) {
+    showToast("Please enter a research topic.");
+    topicInput.focus();
+    return;
+  }
+
+  if (state.running) return;
+
+  state.running = true;
+  state.jobId = null;
+  startBtn.disabled = true;
+  startBtn.querySelector("span:first-child").textContent = "Starting...";
+  errorCard.classList.add("hidden");
+  resultSection.classList.add("hidden");
+  pipelineSection.classList.remove("hidden");
+  resetAgents();
+  progressFill.style.width = "0%";
+  progressNumber.textContent = "0%";
+  currentMessage.textContent = "Creating your research job...";
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/research`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ topic })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.detail || "Could not start research.");
+    }
+
+    state.jobId = data.job_id;
+    showToast("Research started.");
+    pollStatus();
+  } catch (error) {
+    finishWithError(error.message);
+  }
+}
+
+async function pollStatus() {
+  if (!state.jobId) return;
+
+  try {
+    const response = await fetch(
+      `${API_BASE_URL}/api/research/${state.jobId}/status`,
+      { cache: "no-store" }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.detail || "Unable to read research status.");
+    }
+
+    updateProgress(data);
+
+    if (data.status === "completed") {
+      await loadResult();
+      return;
+    }
+
+    if (data.status === "failed") {
+      throw new Error(data.error || data.message || "Research pipeline failed.");
+    }
+
+    state.pollTimer = setTimeout(pollStatus, POLL_INTERVAL);
+  } catch (error) {
+    finishWithError(error.message);
+  }
+}
+
+async function loadResult() {
+  try {
+    const response = await fetch(
+      `${API_BASE_URL}/api/research/${state.jobId}/result`,
+      { cache: "no-store" }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      const detail = typeof data.detail === "object"
+        ? data.detail.error || data.detail.message
+        : data.detail;
+      throw new Error(detail || "Unable to load research result.");
+    }
+
+    state.lastResult = data;
+    renderResult(data);
+    showToast("Research completed successfully.");
+  } catch (error) {
+    finishWithError(error.message);
+  }
+}
+
+function renderResult(data) {
+  pipelineSection.classList.add("hidden");
+  resultSection.classList.remove("hidden");
+
+  $("resultTitle").textContent = "Research Report";
+  $("resultTopic").textContent = data.topic || "";
+
+  $("searchStat").textContent =
+    data.search_results ? "Available" : "Not returned";
+  $("sourceStat").textContent =
+    data.scraped_content ? "Available" : "Not returned";
+
+  $("reportContent").innerHTML = renderMarkdown(data.report);
+  $("sourcesContent").textContent =
+    `SEARCH RESULTS\n\n${formatReport(data.search_results)}\n\n` +
+    `DETAILED SCRAPED CONTENT\n\n${formatReport(data.scraped_content)}`;
+  $("feedbackContent").textContent = formatReport(data.feedback);
+
+  ["Search Agent", "Reader Agent", "Writer", "Critic"].forEach(
+    agent => setAgentState(agent, "completed")
+  );
+
+  progressFill.style.width = "100%";
+  progressNumber.textContent = "100%";
+  currentMessage.textContent = "Research completed successfully.";
+}
+
+function finishWithError(message) {
+  clearTimeout(state.pollTimer);
+  state.running = false;
+  startBtn.disabled = false;
+  startBtn.querySelector("span:first-child").textContent = "Start research";
+
+  pipelineSection.classList.add("hidden");
+  errorCard.classList.remove("hidden");
+  $("errorMessage").textContent = message || "Something went wrong.";
+
+  showToast("Research failed.");
+}
+
+function resetResearch() {
+  clearTimeout(state.pollTimer);
+  state.jobId = null;
+  state.running = false;
+  state.lastResult = null;
+  topicInput.value = "";
+  startBtn.disabled = false;
+  startBtn.querySelector("span:first-child").textContent = "Start research";
+  pipelineSection.classList.add("hidden");
+  resultSection.classList.add("hidden");
+  errorCard.classList.add("hidden");
+  resetAgents();
+  progressFill.style.width = "0%";
+  progressNumber.textContent = "0%";
+  currentMessage.textContent = "Preparing your research...";
+  topicInput.focus();
+}
+
+async function checkHealth() {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/health`);
+    const data = await response.json();
+
+    if (response.ok && data.status === "healthy") {
+      showToast("FastAPI backend is connected.");
+    } else {
+      throw new Error("Backend is not healthy.");
+    }
+  } catch (error) {
+    showToast("Cannot reach FastAPI backend.");
+  }
+}
+
+async function loadHistory() {
+  const list = $("historyList");
+  list.innerHTML = '<div class="empty-state">Loading history...</div>';
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/research`);
+    const items = await response.json();
+
+    if (!response.ok || !Array.isArray(items) || items.length === 0) {
+      list.innerHTML = '<div class="empty-state">No research jobs yet.</div>';
+      return;
+    }
+
+    list.innerHTML = items.map(item => `
+      <div class="history-item">
+        <div>
+          <div class="history-topic">${escapeHtml(item.topic)}</div>
+          <div class="history-meta">${escapeHtml(item.job_id)} · ${escapeHtml(item.step)}</div>
+        </div>
+        <div class="history-status">${escapeHtml(item.status)}</div>
+      </div>
+    `).join("");
+  } catch {
+    list.innerHTML = '<div class="empty-state">Could not load history.</div>';
+  }
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+document.querySelectorAll(".example-chip").forEach(button => {
+  button.addEventListener("click", () => {
+    topicInput.value = button.textContent.trim();
+    topicInput.focus();
+  });
+});
+
+document.querySelectorAll(".tab").forEach(tab => {
+  tab.addEventListener("click", () => {
+    document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+    document.querySelectorAll(".result-panel").forEach(p => p.classList.remove("active"));
+
+    tab.classList.add("active");
+    $(`tab-${tab.dataset.tab}`).classList.add("active");
+  });
+});
+
+document.querySelectorAll(".nav-item").forEach(item => {
+  item.addEventListener("click", () => {
+    document.querySelectorAll(".nav-item").forEach(i => i.classList.remove("active"));
+    item.classList.add("active");
+
+    const view = item.dataset.view;
+    $("researchView").classList.toggle("hidden", view !== "research");
+    $("historyView").classList.toggle("hidden", view !== "history");
+
+    if (view === "history") loadHistory();
+    $("sidebar").classList.remove("open");
+  });
+});
+
+$("newResearchBtn").addEventListener("click", resetResearch);
+$("newBtn").addEventListener("click", resetResearch);
+$("startBtn").addEventListener("click", startResearch);
+$("healthBtn").addEventListener("click", checkHealth);
+
+$("copyBtn").addEventListener("click", async () => {
+  const report = state.lastResult?.report || "";
+  if (!report) {
+    showToast("There is no report to copy.");
+    return;
+  }
+
+  try {
+    await navigator.clipboard.writeText(String(report));
+    showToast("Report copied to clipboard.");
+  } catch {
+    showToast("Copy failed. Select and copy the report manually.");
+  }
+});
+
+$("mobileMenu").addEventListener("click", () => {
+  $("sidebar").classList.toggle("open");
+});
+
+topicInput.addEventListener("keydown", (event) => {
+  if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
+    startResearch();
+  }
+});
+
+  </script>
+</body>
+</html>
