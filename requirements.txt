@@ -1,48 +1,88 @@
-# Core LLM + LangChain ecosystem
+# ==========================================
+# Core LangChain ecosystem
+# ==========================================
+
 langchain>=0.2.0
 langchain-core>=0.2.0
 langchain-community>=0.2.0
 
+# ==========================================
+# LLM Providers
+# ==========================================
+
+# Google Gemini
+langchain-google-genai
+
+# Mistral
 langchain-mistralai
 mistralai
 
-# Tavily Search Tool
+# ==========================================
+# Tavily Search
+# ==========================================
+
 tavily-python>=0.3.0
 
-# Web scraping
+# ==========================================
+# Web Scraping
+# ==========================================
+
 beautifulsoup4>=4.12.0
 requests>=2.31.0
 lxml>=5.0.0
+html5lib>=1.1
 
-# Environment variables
-python-dotenv>=1.0.0
+# ==========================================
+# Environment Variables
+# ==========================================
 
-# Async support (important for agents/tools)
+python-dotenv==1.0.1
+
+# ==========================================
+# Async Support
+# ==========================================
+
 aiohttp>=3.9.0
 
-# Data handling (optional but useful in pipelines)
+# ==========================================
+# Data Handling
+# ==========================================
+
 pandas>=2.0.0
 
-# Token counting / text utils
+# ==========================================
+# Token Counting
+# ==========================================
+
 tiktoken>=0.6.0
 
-# Logging / debugging (optional but recommended)
+# ==========================================
+# Logging / Debugging
+# ==========================================
+
 rich>=13.7.0
 
-# Retry + robustness
+# ==========================================
+# Retry / Robustness
+# ==========================================
+
 tenacity>=8.2.0
 
-# JSON handling improvements
+# ==========================================
+# Fast JSON
+# ==========================================
+
 orjson>=3.9.0
 
-# Typing support (helps in bigger projects)
-pydantic>=2.5.0
+# ==========================================
+# Data Validation
+# ==========================================
 
-# Optional (for advanced parsing / HTML cleanup)
-html5lib>=1.1
+pydantic==2.9.2
+
+# ==========================================
+# FastAPI Backend
+# ==========================================
 
 fastapi==0.115.0
 uvicorn[standard]==0.30.6
-pydantic==2.9.2
-python-dotenv==1.0.1
-
