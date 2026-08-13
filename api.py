@@ -25,10 +25,14 @@ app = FastAPI(
 # CORS
 # ============================================================
 
+from fastapi.middleware.cors import CORSMiddleware
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Local development. Restrict in production.
-    allow_credentials=["https://ai-research-assistance-1.onrender.com"],
+    allow_origins=[
+        "https://ai-research-assistance-1.onrender.com"
+    ],
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
