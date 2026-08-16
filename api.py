@@ -30,11 +30,7 @@ from fastapi.middleware.cors import CORSMiddleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "https://ai-research-assistance-1.onrender.com",
-        "http://localhost:3000",
-        "http://localhost:5173",
-        "http://localhost:5500",
-        "http://127.0.0.1:5500",
+        "https://ai-research-assistance-1.onrender.com"
     ],
     allow_credentials=True,
     allow_methods=["*"],
