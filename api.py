@@ -30,7 +30,11 @@ from fastapi.middleware.cors import CORSMiddleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "https://ai-research-assistance-1.onrender.com"
+        "https://ai-research-assistance-1.onrender.com",
+        "http://127.0.0.1:8000",
+        "http://localhost:8000",
+        "http://127.0.0.1:5500", # Add if using VS Code Live Server
+        "http://localhost:5500"
     ],
     allow_credentials=True,
     allow_methods=["*"],
